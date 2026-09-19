@@ -1,96 +1,183 @@
-# 简记（money_tracker）
+<p align="center">
+  <img src="assets/icons/app_icon.png" width="112" alt="简记应用图标">
+</p>
 
-简记是一款纯本地 Android 个人记账 App。
+<h1 align="center">简记</h1>
 
-## 已实现
+<p align="center">
+  一款完全在本地运行的 Android 现金流助手。<br>
+  <strong>打开两秒，就知道今天能不能花。</strong>
+</p>
 
-- 首页显示本月结余、收入、支出和最近五笔账单；无数据时显示空状态。
-- 使用 Material 3 NavigationBar 在首页、统计、账单、设置之间切换。
-- 主题支持跟随系统、浅色、深色，并保存在本机。
-- 账单 Repository / DAO 支持新增、修改、删除、全部查询、按日/月/收支类型查询及实时订阅。
-- 内置 8 个支出分类和 6 个收入分类。分类以稳定 ID 存储，并预留图标、颜色及自定义分类字段。
-- 金额以**整数分**存入 SQLite，例如 ¥12.50 存为 `1250`，避免浮点精度问题。
-- 已建立账户、交易状态/来源和周期计划数据模型；新数据库会创建一个默认账户。
-- 当前余额由账户初始余额和已确认交易动态派生；计划、候选交易不影响真实余额，账户间转账不改变总资产或月度收支。
-- 数据库可从 schema v1 无损升级到 v2，旧账单自动归入默认账户并补齐稳定 UUID、确认状态与手动来源。
-- 可新增、编辑和复制收入、支出与转账，选择账户、分类、日期并填写商户和备注；最近使用的账户与分类会保存在本机。
-- 金额键盘支持简单加减表达式，金额解析和存储全程使用整数分，并拒绝零值、负值和越界金额。
-- 账单详情支持删除和撤销；撤销会保留原 UUID 与审计时间，避免后续备份合并产生重复身份。
-- 账单列表按日期分组，支持关键词、类型、分类、账户和日期范围筛选。
-- 支持一次性与每周、每月、每年、自定义天数周期计划，可确认、跳过、改单次或修改后续。
-- 动态预测未来 30 天每日余额、最低余额及原因，并按可支配余额、必要支出和安全垫计算“安心可花”。
-- 支持“瑞幸 16 微信”“下周一房租 2500”等本地快速输入；识别结果进入普通可编辑表单，不会自动入账。
-- 商户分类与账户规则只保存在本机，可在设置页查看和删除。
-- 主导航为“今天 / 未来 / 时间线 / 设置”：今天页提供安心可花与快速记账，未来页展示 30 天余额曲线和计划，时间线连续展示未来事项与历史账单。
-- Android 启动器图标使用仓库内的原图生成各屏幕密度资源。
+<p align="center">
+  Flutter · Material 3 · Riverpod · Drift / SQLite
+</p>
 
-账单和主题设置只保存在应用私有目录。App 不需要账号、服务器或云同步；Android 系统备份已关闭。**卸载应用或清除应用数据会删除账单**，导出与恢复功能尚未实现。
+> [!IMPORTANT]
+> 简记目前处于开发阶段，数据导出与恢复尚未实现。账单只保存在应用私有目录，卸载应用或清除应用数据会永久删除账单，请暂勿将它作为重要财务数据的唯一副本。
 
-## 技术栈与结构
+## 为什么做简记
 
-| 用途 | 技术 |
+传统记账 App 擅长告诉你“过去花了多少”，却不一定能回答更迫切的问题：**接下来还有哪些支出，今天到底可以安心花多少？**
+
+简记围绕这个问题组织首页、未来现金流与账单时间线：
+
+| 今天 | 未来 | 本地优先 |
+| --- | --- | --- |
+| 根据当前余额、近期必要支出和安全垫计算“安心可花” | 展示未来 30 天余额曲线、最低余额与周期计划 | 无需账号和服务器，账单、规则与偏好均保存在本机 |
+
+## 核心功能
+
+### 今天
+
+- 汇总本月收入、支出与结余。
+- 根据可支配余额、必要支出和安全垫计算“安心可花”。
+- 通过普通表单或一句话快速记账，例如 `瑞幸 16 微信`、`下周一房租 2500`。
+- 一句话识别结果始终进入可编辑表单，不会自动写入账本。
+
+### 未来
+
+- 创建一次性或每周、每月、每年、自定义间隔的收支计划。
+- 预测未来 30 天的每日余额、最低余额及其成因。
+- 通过余额曲线直观看到现金流拐点。
+- 对计划执行确认、跳过、仅修改本次或修改后续操作。
+
+### 时间线
+
+- 连续查看未来事项与历史账单。
+- 新增、编辑、复制和删除收入、支出及账户间转账。
+- 按日期分组，并按关键词、类型、分类、账户和日期范围筛选。
+- 删除后支持撤销，保留稳定 UUID 与审计时间。
+
+### 个性化
+
+- 内置常用收入与支出分类，并记录最近使用的账户和分类。
+- 商户分类规则与账户规则仅保存在本机，可随时查看和删除。
+- 支持跟随系统、浅色和深色主题。
+
+## 数据与隐私
+
+- 不需要注册或登录，不依赖云端服务。
+- 账单存入应用私有目录中的 SQLite 数据库。
+- Android 系统备份已关闭，避免账本被系统自动同步到云端。
+- 金额使用整数分存储，例如 `¥12.50` 存为 `1250`，避免浮点精度问题。
+- 真实余额由账户初始余额和已确认交易动态派生；计划与候选交易不会提前改变余额。
+- 账户间转账不会改变总资产，也不会计入月度收入或支出。
+- 当前数据库 schema 为 v3，并包含从旧版本无损升级的迁移逻辑。
+
+## 技术栈
+
+| 领域 | 方案 |
 | --- | --- |
-| UI 与主题 | Flutter、Material 3 |
+| UI | Flutter、Material 3 |
 | 状态管理 | Riverpod |
 | 本地数据库 | Drift、SQLite |
 | 页面导航 | go_router |
-| 日期和金额格式 | intl |
-| 后续统计图 | fl_chart（已加入依赖，尚未使用） |
-| 本地主题偏好 | shared_preferences |
+| 图表 | fl_chart |
+| 本地偏好 | shared_preferences |
+| 日期与金额格式 | intl |
+
+项目遵循单向数据流，页面不直接执行 SQL：
+
+```text
+Widget
+  ↓
+Riverpod Provider
+  ↓
+Repository
+  ↓
+DAO
+  ↓
+Drift / SQLite
+```
+
+主要目录：
 
 ```text
 lib/
-├── app/                 # 应用入口、路由、主题
-├── core/                # Drift 数据库、金额和日期工具
+├── app/              # 应用入口、路由与主题
+├── core/             # 数据库、通用工具与基础能力
 ├── features/
-│   ├── home/            # 首页与月度汇总
-│   ├── accounts/        # 账户、派生余额与数据访问层
-│   ├── transactions/    # 账单模型、分类、DAO、Repository、页面
-│   ├── schedules/       # 周期计划模型与数据访问层
-│   ├── statistics/      # 统计页骨架
-│   └── settings/        # 主题设置
-├── shared/widgets/      # 导航壳、空状态、异步状态组件
-└── main.dart
+│   ├── accounts/     # 账户与余额
+│   ├── cash_flow/    # 现金流预测与安心可花
+│   ├── home/         # 今天页
+│   ├── quick_input/  # 本地一句话记账
+│   ├── schedules/    # 周期计划
+│   ├── settings/     # 设置与本地规则
+│   ├── statistics/   # 未来余额图表
+│   └── transactions/ # 账单领域与时间线
+└── shared/           # 跨功能共享组件
 ```
 
-数据流：页面 → Riverpod → Repository → DAO → Drift/SQLite。页面不直接执行 SQL。
+## 快速开始
 
-数据库当前为 schema v3，包含 `accounts`、`transactions`、`schedules`、`schedule_skips` 和 `merchant_rules`。交易支持 income / expense / transfer，以及 confirmed / planned / suggested 状态和 manual / notification / import / schedule 来源。日/月查询采用包含起点、不包含下一日/月起点的范围；修改记录保留创建时间。
+### 环境要求
 
-## 本地运行
+- Flutter 3.47 或兼容版本
+- Dart 3.13 或兼容版本
+- Android SDK 与一台 Android 模拟器或真机
 
-项目只包含 Android 平台。当前开发环境为 Flutter 3.47.4 / Dart 3.13.3；Android 构建文件沿用项目初始化时的配置。
+### 运行项目
 
-```sh
+```bash
 git clone https://github.com/Anima529/money-tracker.git
 cd money-tracker
 flutter pub get
-flutter devices
-flutter run -d <Android设备ID>
+flutter run
 ```
 
-可用 `flutter devices` 输出中的 ID 替换 `<Android设备ID>`。Drift 生成文件已纳入仓库；修改数据库表结构后再运行 `dart run build_runner build`，并为 schema 变更编写迁移。
+修改 Drift 表或生成代码后，执行：
 
-本项目的 `path_provider_android` 固定为 2.2.23，以使用现有 Flutter 编译 SDK。若在 Windows 上遇到 Kotlin 增量缓存的 `this and base files have different roots` 错误（例如项目与 Pub 缓存位于不同盘符），可仅对当次运行关闭增量编译：
-
-```sh
-flutter run -d <Android设备ID> --android-project-arg=kotlin.incremental=false
+```bash
+dart run build_runner build --delete-conflicting-outputs
 ```
 
-如需禁止构建过程自动下载 Android SDK 组件，还可以添加 `--android-project-arg=android.builder.sdkDownload=false`；本机须已具备项目依赖的 SDK 组件。这些参数不会改写 Gradle 或 SDK 配置。
+<details>
+<summary>Windows 下首次构建停在 Gradle 下载怎么办？</summary>
 
-启动器图标源文件为 `assets/icons/app_icon.png`。更换图片后运行 `dart run flutter_launcher_icons`，即可重新生成 Android 图标资源。
+Gradle 首次构建需要下载依赖。若网络不稳定，可先设置镜像后重新运行：
 
-## 验证
+```powershell
+$env:FLUTTER_STORAGE_BASE_URL = "https://storage.flutter-io.cn"
+$env:PUB_HOSTED_URL = "https://pub.flutter-io.cn"
+$env:GRADLE_OPTS = "-Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000"
+flutter run
+```
 
-```sh
-flutter pub get
+</details>
+
+## 质量检查
+
+提交改动前建议运行：
+
+```bash
 flutter analyze
 flutter test
+flutter build apk --debug
 ```
 
-阶段 0 曾在 Pixel 8 / Android 16 模拟器完成启动和页面检查。当前验证结果为 `flutter analyze` 无问题、43 项测试通过，并成功构建 Android debug APK；测试覆盖 v1/v2 → v3 数据库迁移、余额与转账、月末和闰日周期、跳过实例、未来余额、安心可花、快速文本解析、模糊匹配、商户学习、金额边界、防重复提交及页面导航。
+当前测试覆盖金额解析与格式化、Repository/DAO、数据库迁移、账户与余额、转账语义、周期展开、未来现金流、“安心可花”、快速输入及核心界面流程。
 
-## 下一步
+## 路线图
 
-按当前顺序，下一阶段可继续阶段 6 的 Android 支付通知识别；阶段 3 的版本化本地备份与恢复仍是上线前必须补齐的数据安全能力。
+- [x] 本地账单、账户与转账
+- [x] 周期计划与未来现金流预测
+- [x] 一句话快速记账与本地规则
+- [x] 今天 / 未来 / 时间线信息架构
+- [ ] 数据导出、恢复与冲突处理
+- [ ] 通知解析与候选账单
+- [ ] 月度洞察与异常提醒
+- [ ] 无障碍、性能优化与正式发布准备
+
+## 参与贡献
+
+欢迎通过 [Issues](https://github.com/Anima529/money-tracker/issues) 报告问题或提出建议。准备提交代码时：
+
+1. Fork 仓库并从最新分支创建功能分支。
+2. 保持改动聚焦，并为核心逻辑补充测试。
+3. 确保 `flutter analyze` 与 `flutter test` 通过。
+4. 在 Pull Request 中说明问题、实现方式与验证结果；界面改动请附截图。
+
+## 许可证
+
+本仓库目前尚未添加开源许可证。在许可证明确前，代码仍受默认版权约束；欢迎先通过 Issue 参与讨论。
