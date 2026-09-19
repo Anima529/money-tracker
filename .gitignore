@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local AI implementation plan (kept on this workstation only)
+/LOCAL_DEVELOPMENT_PLAN.md
+/CODE_COMMENT_GUIDE.md
