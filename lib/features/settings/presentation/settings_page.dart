@@ -139,46 +139,74 @@ Future<void> _editSafetyBuffer(
   WidgetRef ref,
   int current,
 ) async {
-  final controller = TextEditingController(
-    text:
-        '${current ~/ 100}${current % 100 == 0 ? '' : '.${(current % 100).toString().padLeft(2, '0')}'}',
-  );
-  String? error;
   final value = await showDialog<int>(
     context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('设置安全垫'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(prefixText: '¥ ', errorText: error),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              try {
-                final cents = controller.text.trim() == '0'
-                    ? 0
-                    : AmountExpression.evaluate(controller.text);
-                Navigator.of(context).pop(cents);
-              } on FormatException catch (exception) {
-                setState(() => error = exception.message);
-              }
-            },
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    ),
+    builder: (context) => _SafetyBufferDialog(current: current),
   );
-  controller.dispose();
-  if (value != null) {
+
+  if (value != null && context.mounted) {
+    FocusManager.instance.primaryFocus?.unfocus();
     await ref.read(safetyBufferProvider.notifier).setValue(value);
   }
+}
+
+class _SafetyBufferDialog extends StatefulWidget {
+  const _SafetyBufferDialog({required this.current});
+
+  final int current;
+
+  @override
+  State<_SafetyBufferDialog> createState() => _SafetyBufferDialogState();
+}
+
+class _SafetyBufferDialogState extends State<_SafetyBufferDialog> {
+  late final TextEditingController _controller;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final current = widget.current;
+    _controller = TextEditingController(
+      text:
+          '${current ~/ 100}${current % 100 == 0 ? '' : '.${(current % 100).toString().padLeft(2, '0')}'}',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    try {
+      final input = _controller.text.trim();
+      final cents = input == '0' ? 0 : AmountExpression.evaluate(input);
+      FocusScope.of(context).unfocus();
+      Navigator.of(context).pop(cents);
+    } on FormatException catch (exception) {
+      setState(() => _error = exception.message);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('设置安全垫'),
+    content: TextField(
+      controller: _controller,
+      autofocus: true,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _save(),
+      decoration: InputDecoration(prefixText: '¥ ', errorText: _error),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('取消'),
+      ),
+      FilledButton(onPressed: _save, child: const Text('保存')),
+    ],
+  );
 }
