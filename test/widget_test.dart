@@ -59,6 +59,14 @@ void main() {
       find.widgetWithIcon(NavigationDestination, Icons.settings_outlined),
     );
     await tester.pumpAndSettle();
+    expect(find.text('数据管理'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('回收站'), 200);
+    await tester.tap(find.text('回收站'));
+    await tester.pumpAndSettle();
+    expect(find.text('回收站是空的'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('深色'), -200);
     await tester.tap(find.text('深色'));
     await tester.pumpAndSettle();
     expect(preferences.getString('theme_mode'), 'dark');

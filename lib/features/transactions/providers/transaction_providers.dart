@@ -33,6 +33,9 @@ final recentTransactionsProvider = StreamProvider<List<Transaction>>(
       .watch(transactionRepositoryProvider)
       .watchAll(status: TransactionStatus.confirmed, limit: 5),
 );
+final trashTransactionsProvider = StreamProvider<List<Transaction>>(
+  (ref) => ref.watch(transactionRepositoryProvider).watchTrash(),
+);
 final monthlyTransactionsProvider =
     StreamProvider.family<List<Transaction>, DateTime>(
       (ref, month) =>

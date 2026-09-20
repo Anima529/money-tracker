@@ -1933,6 +1933,17 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1974,6 +1985,7 @@ class $TransactionsTable extends Transactions
     note,
     transactionDate,
     confirmedAt,
+    deletedAt,
     createdAt,
     updatedAt,
   ];
@@ -2119,6 +2131,12 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2212,6 +2230,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.dateTime,
         data['${effectivePrefix}confirmed_at'],
       ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2281,6 +2303,9 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
   /// 正式确认时间；非 confirmed 状态为空。
   final DateTime? confirmedAt;
 
+  /// 移入回收站的时间；为空表示账单仍在正常使用。
+  final DateTime? deletedAt;
+
   /// 首次创建时间。
   final DateTime createdAt;
 
@@ -2304,6 +2329,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     required this.note,
     required this.transactionDate,
     this.confirmedAt,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2340,6 +2366,9 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     map['transaction_date'] = Variable<DateTime>(transactionDate);
     if (!nullToAbsent || confirmedAt != null) {
       map['confirmed_at'] = Variable<DateTime>(confirmedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -2379,6 +2408,9 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       confirmedAt: confirmedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(confirmedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2409,6 +2441,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       note: serializer.fromJson<String>(json['note']),
       transactionDate: serializer.fromJson<DateTime>(json['transactionDate']),
       confirmedAt: serializer.fromJson<DateTime?>(json['confirmedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2434,6 +2467,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       'note': serializer.toJson<String>(note),
       'transactionDate': serializer.toJson<DateTime>(transactionDate),
       'confirmedAt': serializer.toJson<DateTime?>(confirmedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2457,6 +2491,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     String? note,
     DateTime? transactionDate,
     Value<DateTime?> confirmedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => TransactionRow(
@@ -2481,6 +2516,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     note: note ?? this.note,
     transactionDate: transactionDate ?? this.transactionDate,
     confirmedAt: confirmedAt.present ? confirmedAt.value : this.confirmedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2517,6 +2553,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
       confirmedAt: data.confirmedAt.present
           ? data.confirmedAt.value
           : this.confirmedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2542,6 +2579,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
           ..write('note: $note, ')
           ..write('transactionDate: $transactionDate, ')
           ..write('confirmedAt: $confirmedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2567,6 +2605,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
     note,
     transactionDate,
     confirmedAt,
+    deletedAt,
     createdAt,
     updatedAt,
   );
@@ -2591,6 +2630,7 @@ class TransactionRow extends DataClass implements Insertable<TransactionRow> {
           other.note == this.note &&
           other.transactionDate == this.transactionDate &&
           other.confirmedAt == this.confirmedAt &&
+          other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2613,6 +2653,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
   final Value<String> note;
   final Value<DateTime> transactionDate;
   final Value<DateTime?> confirmedAt;
+  final Value<DateTime?> deletedAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const TransactionsCompanion({
@@ -2633,6 +2674,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     this.note = const Value.absent(),
     this.transactionDate = const Value.absent(),
     this.confirmedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -2654,6 +2696,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     this.note = const Value.absent(),
     required DateTime transactionDate,
     this.confirmedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : uuid = Value(uuid),
@@ -2684,6 +2727,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     Expression<String>? note,
     Expression<DateTime>? transactionDate,
     Expression<DateTime>? confirmedAt,
+    Expression<DateTime>? deletedAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -2705,6 +2749,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
       if (note != null) 'note': note,
       if (transactionDate != null) 'transaction_date': transactionDate,
       if (confirmedAt != null) 'confirmed_at': confirmedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -2728,6 +2773,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     Value<String>? note,
     Value<DateTime>? transactionDate,
     Value<DateTime?>? confirmedAt,
+    Value<DateTime?>? deletedAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -2749,6 +2795,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
       note: note ?? this.note,
       transactionDate: transactionDate ?? this.transactionDate,
       confirmedAt: confirmedAt ?? this.confirmedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -2808,6 +2855,9 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
     if (confirmedAt.present) {
       map['confirmed_at'] = Variable<DateTime>(confirmedAt.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2837,6 +2887,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
           ..write('note: $note, ')
           ..write('transactionDate: $transactionDate, ')
           ..write('confirmedAt: $confirmedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5484,6 +5535,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String> note,
       required DateTime transactionDate,
       Value<DateTime?> confirmedAt,
+      Value<DateTime?> deletedAt,
       required DateTime createdAt,
       required DateTime updatedAt,
     });
@@ -5506,6 +5558,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String> note,
       Value<DateTime> transactionDate,
       Value<DateTime?> confirmedAt,
+      Value<DateTime?> deletedAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -5642,6 +5695,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<DateTime> get confirmedAt => $composableBuilder(
     column: $table.confirmedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5804,6 +5862,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5945,6 +6008,9 @@ class $$TransactionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -6070,6 +6136,7 @@ class $$TransactionsTableTableManager
                 Value<String> note = const Value.absent(),
                 Value<DateTime> transactionDate = const Value.absent(),
                 Value<DateTime?> confirmedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => TransactionsCompanion(
@@ -6090,6 +6157,7 @@ class $$TransactionsTableTableManager
                 note: note,
                 transactionDate: transactionDate,
                 confirmedAt: confirmedAt,
+                deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -6112,6 +6180,7 @@ class $$TransactionsTableTableManager
                 Value<String> note = const Value.absent(),
                 required DateTime transactionDate,
                 Value<DateTime?> confirmedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
               }) => TransactionsCompanion.insert(
@@ -6132,6 +6201,7 @@ class $$TransactionsTableTableManager
                 note: note,
                 transactionDate: transactionDate,
                 confirmedAt: confirmedAt,
+                deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

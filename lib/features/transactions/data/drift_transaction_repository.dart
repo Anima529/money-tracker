@@ -118,24 +118,15 @@ class DriftTransactionRepository implements TransactionRepository {
   Future<int> add(TransactionDraft draft) async =>
       dao.insert(_values(draft, creating: true));
   @override
-  Future<int> restore(Transaction transaction) {
-    // 先复用草稿校验，再覆盖由恢复记录保留的标识和审计字段。
-    final validated = _values(transaction.toDraft(), creating: true);
-    return dao.insert(
-      validated.copyWith(
-        uuid: Value(transaction.uuid),
-        confirmedAt: Value(transaction.confirmedAt),
-        createdAt: Value(transaction.createdAt),
-        updatedAt: Value(transaction.updatedAt),
-      ),
-    );
-  }
-
-  @override
   Future<bool> update(int id, TransactionDraft draft) async =>
       await dao.update(id, _values(draft, creating: false)) > 0;
   @override
-  Future<bool> delete(int id) async => await dao.delete(id) > 0;
+  Future<bool> delete(int id) async => await dao.moveToTrash(id, _clock()) > 0;
+  @override
+  Future<bool> restore(int id) async => await dao.restore(id) > 0;
+  @override
+  Future<bool> permanentlyDelete(int id) async =>
+      await dao.permanentlyDelete(id) > 0;
   @override
   Future<List<Transaction>> getAll({
     TransactionType? type,
@@ -193,6 +184,9 @@ class DriftTransactionRepository implements TransactionRepository {
         status: TransactionStatus.confirmed.name,
       )
       .map(_map);
+  @override
+  Stream<List<Transaction>> watchTrash() =>
+      dao.watch(trashOnly: true).map(_map);
 
   static List<Transaction> _map(List<TransactionRow> rows) => rows
       .map(
@@ -214,6 +208,7 @@ class DriftTransactionRepository implements TransactionRepository {
           note: row.note,
           transactionDate: row.transactionDate,
           confirmedAt: row.confirmedAt,
+          deletedAt: row.deletedAt,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
         ),
@@ -222,7 +217,7 @@ class DriftTransactionRepository implements TransactionRepository {
 }
 
 extension TransactionDraftConversion on Transaction {
-  /// 编辑、复制和撤销删除共用同一套字段映射，避免遗漏金额语义字段。
+  /// 编辑和复制共用同一套字段映射，避免遗漏金额语义字段。
   TransactionDraft toDraft({bool asManualCopy = false}) => TransactionDraft(
     type: type,
     amount: amount,

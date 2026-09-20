@@ -41,7 +41,7 @@ class _TransactionDetailSheetState
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除这笔账单？'),
-        content: const Text('删除后可在底部提示中立即撤销。'),
+        content: const Text('账单会移入回收站，你可以稍后恢复。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -68,23 +68,6 @@ class _TransactionDetailSheetState
     final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
     messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        content: const Text('账单已删除'),
-        action: SnackBarAction(
-          label: '撤销',
-          onPressed: () async {
-            try {
-              await repository.restore(widget.transaction);
-            } on Object {
-              messenger.showSnackBar(
-                const SnackBar(content: Text('撤销失败，请重新记一笔')),
-              );
-            }
-          },
-        ),
-      ),
-    );
   }
 
   @override

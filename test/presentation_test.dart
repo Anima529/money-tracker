@@ -49,6 +49,7 @@ void main() {
                         note: '很长的备注' * 50,
                         transactionDate: DateTime(2026, 9, 17),
                         confirmedAt: DateTime(2026, 9, 17),
+                        deletedAt: null,
                         createdAt: DateTime(2026, 9, 17),
                         updatedAt: DateTime(2026, 9, 17),
                       ),

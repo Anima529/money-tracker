@@ -70,8 +70,14 @@ void main() {
     expect(updated.updatedAt, now);
     expect(await repository.delete(id), isTrue);
     expect(await repository.getAll(), isEmpty);
+    final trashed = await repository.watchTrash().first;
+    expect(trashed.single.id, id);
+    expect(trashed.single.deletedAt, now);
     expect(await repository.delete(id), isFalse);
     expect(await repository.update(id, draft()), isFalse);
+    expect(await repository.permanentlyDelete(id), isTrue);
+    expect(await repository.watchTrash().first, isEmpty);
+    expect(await repository.permanentlyDelete(id), isFalse);
   });
 
   test(
@@ -195,17 +201,19 @@ void main() {
     await expectation;
   });
 
-  test('delete undo restores stable identity and audit fields', () async {
+  test('trash restore preserves stable identity and audit fields', () async {
     final id = await repository.add(draft(note: '可撤销'));
     final original = (await repository.getAll()).single;
     expect(await repository.delete(id), isTrue);
-    final restoredId = await repository.restore(original);
+    expect(await repository.restore(id), isTrue);
     final restored = (await repository.getAll()).single;
-    expect(restoredId, isPositive);
+    expect(restored.id, id);
     expect(restored.uuid, original.uuid);
     expect(restored.createdAt, original.createdAt);
     expect(restored.updatedAt, original.updatedAt);
+    expect(restored.deletedAt, isNull);
     expect(restored.note, '可撤销');
+    expect(await repository.restore(id), isFalse);
   });
 
   test('recent limit and monthly summary are exact', () async {

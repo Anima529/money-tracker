@@ -87,10 +87,11 @@ void main() {
       expect(transaction.createdAt, createdAt);
       expect(transaction.updatedAt, updatedAt);
       expect(transaction.confirmedAt, createdAt);
+      expect(transaction.deletedAt, isNull);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        3,
+        4,
       );
     } finally {
       await database.close();
@@ -135,10 +136,17 @@ void main() {
           tables.map((row) => row.read<String>('name')),
           containsAll(['schedule_skips', 'merchant_rules']),
         );
+        final transactionColumns = await database
+            .customSelect('PRAGMA table_info(transactions)')
+            .get();
+        expect(
+          transactionColumns.map((row) => row.read<String>('name')),
+          contains('deleted_at'),
+        );
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          3,
+          4,
         );
       } finally {
         await database.close();

@@ -3,10 +3,16 @@ import 'transaction.dart';
 abstract interface class TransactionRepository {
   Future<int> add(TransactionDraft draft);
 
-  /// 撤销删除时恢复原有稳定标识和审计时间。
-  Future<int> restore(Transaction transaction);
   Future<bool> update(int id, TransactionDraft draft);
+
+  /// 将账单移入回收站，不立即移除数据。
   Future<bool> delete(int id);
+
+  /// 将账单从回收站恢复到正常列表。
+  Future<bool> restore(int id);
+
+  /// 真正移除回收站中的账单，操作不可撤销。
+  Future<bool> permanentlyDelete(int id);
   Future<List<Transaction>> getAll({
     TransactionType? type,
     TransactionStatus? status,
@@ -29,4 +35,7 @@ abstract interface class TransactionRepository {
     int? limit,
   });
   Stream<List<Transaction>> watchMonth(DateTime month);
+
+  /// 按最近删除时间倒序观察回收站内容。
+  Stream<List<Transaction>> watchTrash();
 }

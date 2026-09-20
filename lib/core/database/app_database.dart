@@ -209,6 +209,9 @@ class Transactions extends Table {
   /// 正式确认时间；非 confirmed 状态为空。
   DateTimeColumn get confirmedAt => dateTime().nullable()();
 
+  /// 移入回收站的时间；为空表示账单仍在正常使用。
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
   /// 首次创建时间。
   DateTimeColumn get createdAt => dateTime()();
 
@@ -292,7 +295,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -305,6 +308,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await migrator.createTable(scheduleSkips);
         await migrator.createTable(merchantRules);
+      }
+      // v1 会在上方直接按最新结构重建交易表，无需重复加列。
+      if (from >= 2 && from < 4) {
+        await migrator.addColumn(transactions, transactions.deletedAt);
       }
     },
     beforeOpen: (details) async {

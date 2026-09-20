@@ -12,10 +12,18 @@ class TransactionDao {
       database.into(database.transactions).insert(value);
   Future<int> update(int id, TransactionsCompanion value) => (database.update(
     database.transactions,
-  )..where((row) => row.id.equals(id))).write(value);
-  Future<int> delete(int id) => (database.delete(
+  )..where((row) => row.id.equals(id) & row.deletedAt.isNull())).write(value);
+  Future<int> moveToTrash(int id, DateTime deletedAt) =>
+      (database.update(database.transactions)
+            ..where((row) => row.id.equals(id) & row.deletedAt.isNull()))
+          .write(TransactionsCompanion(deletedAt: Value(deletedAt)));
+  Future<int> restore(int id) =>
+      (database.update(database.transactions)
+            ..where((row) => row.id.equals(id) & row.deletedAt.isNotNull()))
+          .write(const TransactionsCompanion(deletedAt: Value(null)));
+  Future<int> permanentlyDelete(int id) => (database.delete(
     database.transactions,
-  )..where((row) => row.id.equals(id))).go();
+  )..where((row) => row.id.equals(id) & row.deletedAt.isNotNull())).go();
 
   SimpleSelectStatement<Transactions, TransactionRow> _query({
     DateTime? start,
@@ -24,8 +32,12 @@ class TransactionDao {
     String? status,
     int? accountId,
     int? limit,
+    bool trashOnly = false,
   }) {
     final query = database.select(database.transactions);
+    query.where(
+      (row) => trashOnly ? row.deletedAt.isNotNull() : row.deletedAt.isNull(),
+    );
     if (start != null) {
       query.where((row) => row.transactionDate.isBiggerOrEqualValue(start));
     }
@@ -42,10 +54,17 @@ class TransactionDao {
       );
     }
     // 同一天按自增 ID 倒序，避免列表顺序在刷新时跳动。
-    query.orderBy([
-      (row) => OrderingTerm.desc(row.transactionDate),
-      (row) => OrderingTerm.desc(row.id),
-    ]);
+    query.orderBy(
+      trashOnly
+          ? [
+              (row) => OrderingTerm.desc(row.deletedAt),
+              (row) => OrderingTerm.desc(row.id),
+            ]
+          : [
+              (row) => OrderingTerm.desc(row.transactionDate),
+              (row) => OrderingTerm.desc(row.id),
+            ],
+    );
     if (limit != null) {
       if (limit < 1) throw ArgumentError.value(limit, 'limit');
       query.limit(limit);
@@ -59,12 +78,14 @@ class TransactionDao {
     String? type,
     String? status,
     int? accountId,
+    bool trashOnly = false,
   }) => _query(
     start: start,
     end: end,
     type: type,
     status: status,
     accountId: accountId,
+    trashOnly: trashOnly,
   ).get();
   Stream<List<TransactionRow>> watch({
     DateTime? start,
@@ -73,6 +94,7 @@ class TransactionDao {
     String? status,
     int? accountId,
     int? limit,
+    bool trashOnly = false,
   }) => _query(
     start: start,
     end: end,
@@ -80,5 +102,6 @@ class TransactionDao {
     status: status,
     accountId: accountId,
     limit: limit,
+    trashOnly: trashOnly,
   ).watch();
 }

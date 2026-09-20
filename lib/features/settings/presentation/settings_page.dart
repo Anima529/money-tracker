@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/amount_expression.dart';
 import '../../../core/utils/money.dart';
@@ -66,6 +67,18 @@ class SettingsPage extends ConsumerWidget {
             subtitle: const Text('从安心可花中额外预留'),
             trailing: Text(Money.format(safetyBuffer)),
             onTap: () => _editSafetyBuffer(context, ref, safetyBuffer),
+          ),
+        ),
+        const SizedBox(height: 28),
+        Text('数据管理', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.delete_outline_rounded),
+            title: const Text('回收站'),
+            subtitle: const Text('恢复或永久删除已删除的账单'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/trash'),
           ),
         ),
         const SizedBox(height: 28),

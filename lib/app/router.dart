@@ -5,6 +5,7 @@ import '../features/home/presentation/home_page.dart';
 import '../features/settings/presentation/settings_page.dart';
 import '../features/statistics/presentation/statistics_page.dart';
 import '../features/transactions/presentation/transactions_page.dart';
+import '../features/transactions/presentation/trash_page.dart';
 import '../shared/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -46,6 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      GoRoute(path: '/trash', builder: (context, state) => const TrashPage()),
     ],
   );
   ref.onDispose(router.dispose);

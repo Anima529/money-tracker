@@ -28,6 +28,7 @@ class Transaction {
     required this.note,
     required this.transactionDate,
     required this.confirmedAt,
+    required this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -82,6 +83,9 @@ class Transaction {
 
   /// 正式确认时间；非 confirmed 状态为空。
   final DateTime? confirmedAt;
+
+  /// 移入回收站的时间；为空表示账单未被删除。
+  final DateTime? deletedAt;
 
   /// 首次创建时间。
   final DateTime createdAt;

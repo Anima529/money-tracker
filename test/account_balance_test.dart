@@ -114,6 +114,21 @@ void main() {
       expect(summary.income, 3000);
       expect(summary.expense, 1000);
       expect(summary.balance, 2000);
+
+      final expense = (await transactions.getAll(
+        type: TransactionType.expense,
+        status: TransactionStatus.confirmed,
+      )).single;
+      expect(await transactions.delete(expense.id), isTrue);
+      expect(
+        (await accounts.getBalances()).map((item) => item.currentBalance),
+        [10500, 7500],
+      );
+      expect(await transactions.restore(expense.id), isTrue);
+      expect(
+        (await accounts.getBalances()).map((item) => item.currentBalance),
+        [9500, 7500],
+      );
     },
   );
 

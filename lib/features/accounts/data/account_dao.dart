@@ -53,7 +53,8 @@ class AccountDao {
           ), 0) AS current_balance
         FROM accounts a
         LEFT JOIN transactions t
-          ON t.account_id = a.id OR t.transfer_account_id = a.id
+          ON (t.account_id = a.id OR t.transfer_account_id = a.id)
+          AND t.deleted_at IS NULL
         $archivedClause
         GROUP BY a.id
         ORDER BY a.sort_order, a.id
