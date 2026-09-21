@@ -11,7 +11,7 @@ import 'package:money_tracker/features/transactions/providers/transaction_provid
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('amount keypad saves once during repeated submit', (
+  testWidgets('system amount input saves once during repeated submit', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -43,12 +43,15 @@ void main() {
     await tester.tap(find.text('打开表单'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('1'));
-    await tester.tap(find.text('2'));
-    await tester.tap(find.text('+'));
-    await tester.tap(find.text('3'));
+    final amountField = find.byKey(const ValueKey('transaction_amount_input'));
+    expect(
+      tester.widget<TextField>(amountField).keyboardType,
+      const TextInputType.numberWithOptions(decimal: true, signed: true),
+    );
+    expect(find.text('⌫'), findsNothing);
+    await tester.enterText(amountField, '12+3');
     await tester.pump();
-    expect(find.text('¥15.00'), findsOneWidget);
+    expect(find.text('合计 ¥15.00'), findsOneWidget);
 
     await tester.tap(find.text('保存'));
     // 第二次点击发生在首个保存请求已开始、弹层关闭动画尚未结束时。

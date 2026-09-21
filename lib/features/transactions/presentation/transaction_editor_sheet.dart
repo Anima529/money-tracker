@@ -80,6 +80,7 @@ class _TransactionEditorSheetState
   late String _category;
   int? _accountId;
   int? _transferAccountId;
+  late final TextEditingController _amountController;
   late final TextEditingController _merchantController;
   late final TextEditingController _noteController;
   late final TextEditingController _quickInputController;
@@ -104,6 +105,7 @@ class _TransactionEditorSheetState
         : draft != null
         ? _plainAmount(draft.amount)
         : '';
+    _amountController = TextEditingController(text: _expression);
     _date =
         initial?.transactionDate ??
         draft?.transactionDate ??
@@ -124,6 +126,7 @@ class _TransactionEditorSheetState
 
   @override
   void dispose() {
+    _amountController.dispose();
     _merchantController.dispose();
     _noteController.dispose();
     _quickInputController.dispose();
@@ -197,48 +200,6 @@ class _TransactionEditorSheetState
           : null;
       _error = null;
     });
-  }
-
-  void _pressKey(String key) {
-    if (_saving) return;
-    setState(() {
-      _error = null;
-      if (key == 'C') {
-        _expression = '';
-      } else if (key == '⌫') {
-        if (_expression.isNotEmpty) {
-          _expression = _expression.substring(0, _expression.length - 1);
-        }
-      } else if (key == '+' || key == '-') {
-        if (_expression.isEmpty) return;
-        if (_expression.endsWith('+') || _expression.endsWith('-')) {
-          _expression =
-              '${_expression.substring(0, _expression.length - 1)}$key';
-        } else if (!_expression.endsWith('.')) {
-          _expression += key;
-        }
-      } else {
-        final current = _expression.split(RegExp(r'[+-]')).last;
-        if (key == '.' && current.contains('.')) return;
-        if (key == '.' && current.isEmpty) {
-          _expression += '0.';
-          return;
-        }
-        if (current.contains('.') && current.split('.').last.length >= 2) {
-          return;
-        }
-        if (key == '00' && current.isEmpty) return;
-        if (current == '0' && (key == '0' || key == '00')) return;
-        if (_expression.length + key.length > 64) return;
-        if (current == '0' && key != '.') {
-          _expression =
-              '${_expression.substring(0, _expression.length - 1)}$key';
-        } else {
-          _expression += key;
-        }
-      }
-    });
-    HapticFeedback.selectionClick();
   }
 
   Future<void> _pickDate() async {
@@ -357,13 +318,16 @@ class _TransactionEditorSheetState
       _category = result.category;
       _date = result.date;
       _newStatus = result.status;
-      if (result.amount != null) _expression = _plainAmount(result.amount!);
+      if (result.amount != null) {
+        _expression = _plainAmount(result.amount!);
+        _amountController.text = _expression;
+      }
       if (result.accountId != null &&
           accounts.any((account) => account.id == result.accountId)) {
         _accountId = result.accountId;
       }
       if (result.merchant != null) _merchantController.text = result.merchant!;
-      _error = result.hasAmount ? null : '未识别到金额，请继续使用金额键盘';
+      _error = result.hasAmount ? null : '未识别到金额，请在金额输入框中填写';
     });
   }
 
@@ -414,12 +378,7 @@ class _TransactionEditorSheetState
           body: accounts.isEmpty
               ? const Center(child: Text('请先创建一个可用账户'))
               : ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    20,
-                    8,
-                    20,
-                    24 + MediaQuery.viewInsetsOf(context).bottom,
-                  ),
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
                   children: [
                     if (_showQuickInput) ...[
                       TextField(
@@ -475,42 +434,54 @@ class _TransactionEditorSheetState
                           _changeType(selection.single, accounts),
                     ),
                     const SizedBox(height: 16),
-                    Semantics(
-                      label: '金额表达式 $_expression',
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
+                    TextField(
+                      key: const ValueKey('transaction_amount_input'),
+                      controller: _amountController,
+                      enabled: !_saving,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(64),
+                        const _AmountExpressionFormatter(),
+                      ],
+                      textInputAction: TextInputAction.done,
+                      onChanged: (value) => setState(() {
+                        _expression = value;
+                        _error = null;
+                      }),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                      textAlign: TextAlign.end,
+                      decoration: InputDecoration(
+                        labelText: '金额',
+                        hintText: '0.00',
+                        hintStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.38),
+                          fontWeight: FontWeight.w400,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _expression.isEmpty ? '0' : _expression,
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              style: Theme.of(context).textTheme.titleMedium,
+                        prefixText: '¥ ',
+                        prefixStyle: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: FontWeight.w400,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              preview == null ? '¥0.00' : Money.format(preview),
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures(),
-                                    ],
-                                  ),
-                            ),
-                          ],
+                        helperText:
+                            '合计 ${preview == null ? '¥0.00' : Money.format(preview)}',
+                        filled: true,
+                        fillColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerLow,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    _AmountKeypad(onKey: _pressKey),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       initialValue: _accountId,
@@ -666,45 +637,19 @@ class _TransactionEditorSheetState
   }
 }
 
-class _AmountKeypad extends StatelessWidget {
-  const _AmountKeypad({required this.onKey});
-
-  final ValueChanged<String> onKey;
+class _AmountExpressionFormatter extends TextInputFormatter {
+  const _AmountExpressionFormatter();
 
   @override
-  Widget build(BuildContext context) {
-    const keys = [
-      '7',
-      '8',
-      '9',
-      '⌫',
-      '4',
-      '5',
-      '6',
-      '+',
-      '1',
-      '2',
-      '3',
-      '-',
-      '.',
-      '0',
-      '00',
-      'C',
-    ];
-    return GridView.count(
-      crossAxisCount: 4,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      childAspectRatio: 2.05,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        for (final key in keys)
-          TextButton(
-            onPressed: () => onKey(key),
-            child: Text(key, style: Theme.of(context).textTheme.titleMedium),
-          ),
-      ],
-    );
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Keep incomplete operators valid while typing; saving still uses
+    // AmountExpression for the final amount and range validation.
+    return RegExp(r'^\d*(?:\.\d{0,2})?(?:[+-]\d*(?:\.\d{0,2})?)*$')
+            .hasMatch(newValue.text)
+        ? newValue
+        : oldValue;
   }
 }
