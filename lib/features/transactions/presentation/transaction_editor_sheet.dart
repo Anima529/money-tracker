@@ -563,20 +563,25 @@ class _TransactionEditorSheetState
                       ),
                     ],
                     const SizedBox(height: 12),
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
                           color: Theme.of(context).colorScheme.outline,
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      leading: const Icon(Icons.calendar_today_outlined),
-                      title: const Text('日期'),
-                      trailing: Text(AppDates.dayLabel(_date)),
-                      onTap: _saving ? null : _pickDate,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          leading: const Icon(Icons.calendar_today_outlined),
+                          title: const Text('日期'),
+                          trailing: Text(AppDates.dayLabel(_date)),
+                          onTap: _saving ? null : _pickDate,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
