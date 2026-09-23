@@ -61,6 +61,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('数据管理'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('回收站'), 200);
+    await tester.drag(find.byType(ListView).last, const Offset(0, -160));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('回收站'));
     await tester.pumpAndSettle();
     expect(find.text('回收站是空的'), findsOneWidget);

@@ -1,7 +1,7 @@
 name: money_tracker
 description: "纯本地 Android 个人记账应用。"
 publish_to: 'none'
-version: 1.0.0+1
+version: 0.3.0
 
 environment:
   sdk: ^3.13.3
@@ -22,6 +22,7 @@ dependencies:
   path_provider_android: 2.2.23
   path: ^1.9.1
   shared_preferences: ^2.5.5
+  archive: ^4.3.0
 
 dev_dependencies:
   flutter_test:

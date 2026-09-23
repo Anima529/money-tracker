@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/amount_expression.dart';
 import '../../../core/utils/money.dart';
+import '../../backup/backup_controls.dart';
 import '../../quick_input/providers/merchant_rule_providers.dart';
 import '../providers/safety_buffer_provider.dart';
 import '../providers/theme_provider.dart';
@@ -71,6 +72,8 @@ class SettingsPage extends ConsumerWidget {
         ),
         const SizedBox(height: 28),
         Text('数据管理', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        const BackupControls(),
         const SizedBox(height: 8),
         Card(
           child: ListTile(
