@@ -18,6 +18,7 @@ class MoneyTrackerApp extends ConsumerWidget {
     theme: AppTheme.light,
     darkTheme: AppTheme.dark,
     themeMode: ref.watch(themeModeProvider),
+    themeAnimationDuration: Duration.zero,
     routerConfig: ref.watch(routerProvider),
   );
 }

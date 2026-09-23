@@ -25,11 +25,11 @@ void main() {
       );
       expect(container.read(themeModeProvider), ThemeMode.system);
       final controller = container.read(themeModeProvider.notifier);
-      await Future.wait([
-        controller.setMode(ThemeMode.light),
-        controller.setMode(ThemeMode.dark),
-      ]);
+      final lightSave = controller.setMode(ThemeMode.light);
+      expect(container.read(themeModeProvider), ThemeMode.light);
+      final darkSave = controller.setMode(ThemeMode.dark);
       expect(container.read(themeModeProvider), ThemeMode.dark);
+      await Future.wait([lightSave, darkSave]);
       container.dispose();
       final reopened = ProviderContainer(
         overrides: [preferencesProvider.overrideWithValue(prefs)],

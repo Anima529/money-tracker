@@ -15,21 +15,33 @@ class ThemeModeController extends Notifier<ThemeMode> {
 
   /// 上一次保存任务，用于串行化连续修改。
   Future<void> _pending = Future<void>.value();
+  late ThemeMode _savedMode;
+
   @override
-  ThemeMode build() =>
-      switch (ref.watch(preferencesProvider).getString(storageKey)) {
-        'light' => ThemeMode.light,
-        'dark' => ThemeMode.dark,
-        _ => ThemeMode.system,
-      };
+  ThemeMode build() {
+    _savedMode = switch (ref.watch(preferencesProvider).getString(storageKey)) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+    return _savedMode;
+  }
+
   Future<void> setMode(ThemeMode mode) {
+    // 先更新界面，避免等待本地存储时让选项看起来没有响应。
+    state = mode;
     // 串行保存连续点击，避免磁盘中的主题与界面状态顺序不一致。
     final operation = _pending.then((_) async {
-      final saved = await ref
-          .read(preferencesProvider)
-          .setString(storageKey, mode.name);
-      if (!saved) throw StateError('Unable to save theme');
-      if (ref.mounted) state = mode;
+      try {
+        final saved = await ref
+            .read(preferencesProvider)
+            .setString(storageKey, mode.name);
+        if (!saved) throw StateError('Unable to save theme');
+        _savedMode = mode;
+      } catch (_) {
+        if (ref.mounted && state == mode) state = _savedMode;
+        rethrow;
+      }
     });
     _pending = operation.then<void>(
       (_) {},
